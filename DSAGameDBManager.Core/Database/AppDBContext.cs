@@ -20,8 +20,10 @@ namespace DSAGameDBManager.Core.Database
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<Feedback>()
-                .HasKey(f => new { f.Feedbak_id });
+            modelBuilder.Entity<Feedback>(entity => {
+                entity.HasKey(key => new { key.Feedbak_id });
+            });
+   
         }
     }
 }
