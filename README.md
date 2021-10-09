@@ -371,7 +371,7 @@ public class MappingProfile : Profile
 
 2. For each mapping config, add CreateMap
 ```c#
-CreateMap<Map_From, Map_To().Method_1(/*lambda expression options*/).Method_2(/*lambda expression options*/);
+CreateMap<Map_From, Map_To>().Method_1( /*lambda expression options*/ ).Method_2( /*lambda expression options*/ );
 
 ```
 > Use Method_1... to provide options in mapping, like CreateMap<Map_From, Map_To().ForMember(d => d.Id, opt => opt.Ignore()); 
