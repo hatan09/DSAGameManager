@@ -284,6 +284,143 @@ public string JWT_Secret { get; set; } = string.Empty;
 
 > Make sure that the name of the field is identical with JWT class (class's name = parent field's name, prop's name = child field's name)
 
+## Configure Authentication
+1. In startup's configure method, add authentication middleware
+```c#
+app.UseAuthentication();
+```
+
+2. Set key & get key
+```c#
+services.Configure<JwTokenConfig>(Configuration.GetSection("JwTokenConfig"));
+
+var key = Encoding.UTF8.GetBytes(Configuration["JwTokenConfig:JWT_Secret"].ToString());
+```
+
+3. Configure JWT authentication with Bearer by adding service
+```c#
+services.AddAuthentication(x =>
+            {
+                x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                x.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+            }).AddJwtBearer(x =>
+            {
+                x.RequireHttpsMetadata = false;
+                x.SaveToken = false;
+                x.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ClockSkew = TimeSpan.Zero
+                };
+            });
+```
+
+## Register DbContext
+1. In startup, add service
+```c#
+services.AddDbContextPool<ApplicationDbContext>(options =>
+                                                            options.UseSqlServer
+                                                           (Configuration.GetConnectionString("DefaultConnection")));
+```
+
+## Configure IdentityUser & User's sub-entities
+> IdentityUser (lib) <- User (this one is used to register/login) <- others (these ones are used to work with data/logic)
+1. For User entity (which inherits from IdentityUser), in startup add service
+```c#
+services.AddIdentity<User, Role>(options => {
+                options.Password.RequireDigit = false;
+                options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+                options.Password.RequireNonAlphanumeric = false;
+                options.Password.RequiredLength = 1;
+
+                //options.User.RequireUniqueEmail = true;
+                //options.SignIn.RequireConfirmedEmail = true;
+            	})	.AddEntityFrameworkStores<ApplicationDbContext>()
+                    	.AddUserManager<UserManager>()
+                    	.AddDefaultTokenProviders();
+```
+
+2. Then for each User's sub-entities (which inherit from User)
+```c#
+services.AddIdentityCore<User-sub-entity>()
+                .AddRoles<Role>()
+                .AddClaimsPrincipalFactory<UserClaimsPrincipalFactory<User-sub-entity, Role>>()
+                .AddEntityFrameworkStores<AppDbContext>()
+                .AddUserManager<User-sub-entityManager>()
+                .AddDefaultTokenProviders();
+
+```
+
+## Add Mapper service & Create Mapper Singleton
+> Mapper is used to map one class to another one (Ex: UserDTO <-> User)
+1. Add MappingProfile class in .Api/DataObjects
+```c#
+public class MappingProfile : Profile
+{
+        public MappingProfile()
+        {
+		//All mapping config here
+	}
+}
+```
+
+2. For each mapping config, add CreateMap
+```c#
+CreateMap<Map_From, Map_To().Method_1(/*lambda expression options*/).Method_2(/*lambda expression options*/);
+
+```
+> Use Method_1... to provide options in mapping, like CreateMap<Map_From, Map_To().ForMember(d => d.Id, opt => opt.Ignore()); 
+==> ignore ```Map_From.Id``` when mapping from ```Map_From``` to ```Map_To```
+==> ```Map_To.Id``` will be null or default value (if specified) no matter what ```Map_From.Id``` is
+
+3. In startup, add this profile to mapper and create Singleton
+```c#
+var mapperConfig = new MapperConfiguration(mc =>
+{
+	mc.AddProfile(new MappingProfile());
+});
+IMapper mapper = mapperConfig.CreateMapper();
+services.AddSingleton(mapper);
+```
+
+## Add UserManager & other Manager classes for User's sub-classes
+> UserManager classes are used to communicate with database and work with entities which are enherited from IdentityUser
+> Similar to other repositories
+> Implement new/unique methods without contracts (different from other repositories)
+> Have many pre-built methods supported by Identity, like ChangeEmailAsync(), ChangePasswordAsync()...
+> UserManager will deal with general user's activities (register, login...), other Managers will deal with specific tasks related to its entities
+
+1. In .Repository, create UserManager
+```c#
+public class UserManager : UserManager<User>
+{
+        public UserManager(
+            IUserStore<User> store,
+            IOptions<IdentityOptions> optionsAccessor,
+            IPasswordHasher<User> passwordHasher,
+            IEnumerable<IUserValidator<User>> userValidators,
+            IEnumerable<IPasswordValidator<User>> passwordValidators,
+            ILookupNormalizer keyNormalizer,
+            IdentityErrorDescriber errors,
+            IServiceProvider services,
+            ILogger<UserManager<User>> logger
+        ) : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger) { /*nothing in here*/ }
+
+	//new methods here
+	//Ex:
+	public new async Task<User?> FindByNameAsync(string userName)
+        {
+            //codes
+        }
+```
+
+2. Add other Manager for other User's subclass as needed by copying above code and replace User by User's subclass name (UserManager<User's subclass name>...)
+
 ## Add migration
 1. Open Package Manager console
 2. Change default project : .Core
