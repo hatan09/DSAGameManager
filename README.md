@@ -47,6 +47,12 @@ start your-project-name.sln
 3. <project-name>.Contracts : tick .Core
 4. <project-name>.Core : tick nothing
 
+## Create folders: 
+> right-click project -> Add -> New Folder
+1. .Core : Database, Entities
+2. .Api: Models, DataObjects, Settings, Controller (if not available)
+3. .Repository: Extensions
+
 ## Install NuGet: 
 > right-click project -> Manage NuGet Packages...
 1. .Api:
@@ -59,13 +65,6 @@ start your-project-name.sln
 - Microsoft.EntityFrameworkCore.Design
 - Microsoft.EntityFrameworkCore.SqlServer
 - Microsoft.Extensions.Identity.Stores
-
-
-## Create folders: 
-> right-click project -> Add -> New Folder
-1. .Core : Database, Entities
-2. .Api: Models, DataObjects, Settings, Controller (if not available)
-3. .Repository: Extensions
 
 ## Create table:
 * Create new PUBLIC classes in .Core.Entities folder (remember to add the PUBLIC access modifier)
@@ -285,7 +284,7 @@ public string JWT_Secret { get; set; } = string.Empty;
 > Make sure that the name of the field is identical with JWT class (class's name = parent field's name, prop's name = child field's name)
 
 ## Configure Authentication
-1. In startup's configure method, add authentication middleware
+1. In startup's Configure method, add authentication middleware
 ```c#
 app.UseAuthentication();
 ```
@@ -393,6 +392,7 @@ services.AddIdentityCore<User-sub-entity>()
 1. In .Reposotory/Extensions, add QueryableExtensions (copy code)
 2. In .Entities, add BaseEntity (copy code and modify if needed)
 3. In .Contracts, add IBaseRepository (copy code)
+4. In .Api/DataObjects, add BaseDTO (copy code and modify if needed)
 
 ## Add Mapper service & Create Mapper Singleton
 > Mapper is used to map one class to another one (Ex: UserDTO <-> User)
@@ -426,36 +426,7 @@ IMapper mapper = mapperConfig.CreateMapper();
 services.AddSingleton(mapper);
 ```
 
-## Add UserManager & other Manager classes for User's sub-classes
-> UserManager classes are used to communicate with database and work with entities which are enherited from IdentityUser
-> Similar to other repositories
-> Implement new/unique methods without contracts (different from other repositories)
-> Have many pre-built methods supported by Identity, like ChangeEmailAsync(), ChangePasswordAsync()...
-> UserManager will deal with general user's activities (register, login...), other Managers will deal with specific tasks related to its entities
 
-1. In .Repository, create UserManager
-```c#
-public class UserManager : UserManager<User>
-{
-        public UserManager(
-            IUserStore<User> store,
-            IOptions<IdentityOptions> optionsAccessor,
-            IPasswordHasher<User> passwordHasher,
-            IEnumerable<IUserValidator<User>> userValidators,
-            IEnumerable<IPasswordValidator<User>> passwordValidators,
-            ILookupNormalizer keyNormalizer,
-            IdentityErrorDescriber errors,
-            IServiceProvider services,
-            ILogger<UserManager<User>> logger
-        ) : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger) { /*nothing in here*/ }
-
-	//new methods here
-	//Ex:
-	public new async Task<User?> FindByNameAsync(string userName)
-        {
-            //codes
-        }
-```
 
 2. Add other Manager for other User's subclass as needed by copying above code and replace User by User's subclass name (UserManager<User's subclass name>...)
 
@@ -468,3 +439,13 @@ public class UserManager : UserManager<User>
 ## Post - JSON file's props: 
 1. Redundant props: OK
 2. Lack of props: if attribute is not nullable coz the attribute is null by default ==> not OK
+
+## General Workflow
+- Create solution (using cmd or interface) > Delete unnecessary classes > Create related projects & folders
+- Refer projects > install NuGet
+- Add JwtConfig > add connection string
+- Add Base classes > add MappingProfile class
+- If use IdentityUser, add User class, Role class, UserRole class > add UserManager class
+- Add AppDbContext class > config existing entities
+- Setting in startup: Configure Authentication, Register DbContext, Configure IdentityUser & User's sub-entities, Add Mapper service & Create Mapper Singleton, Add Authorization header for Swagger, modify Swagger setting in Configure
+### Repeated work: add new entity > add dto > map > config in dbcontext > add IRepo > add Repo > inherit & implement > add controller
