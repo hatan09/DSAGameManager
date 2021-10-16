@@ -327,6 +327,39 @@ services.AddDbContextPool<ApplicationDbContext>(options =>
                                                            (Configuration.GetConnectionString("DefaultConnection")));
 ```
 
+## Add UserManager & other Manager classes for User's sub-classes
+> UserManager classes are used to communicate with database and work with entities which are enherited from IdentityUser
+> Similar to other repositories
+> Implement new/unique methods without contracts (different from other repositories)
+> Have many pre-built methods supported by Identity, like ChangeEmailAsync(), ChangePasswordAsync()...
+> UserManager will deal with general user's activities (register, login...), other Managers will deal with specific tasks related to its entities
+
+1. In .Repository, create UserManager
+```c#
+public class UserManager : UserManager<User>
+{
+        public UserManager(
+            IUserStore<User> store,
+            IOptions<IdentityOptions> optionsAccessor,
+            IPasswordHasher<User> passwordHasher,
+            IEnumerable<IUserValidator<User>> userValidators,
+            IEnumerable<IPasswordValidator<User>> passwordValidators,
+            ILookupNormalizer keyNormalizer,
+            IdentityErrorDescriber errors,
+            IServiceProvider services,
+            ILogger<UserManager<User>> logger
+        ) : base(store, optionsAccessor, passwordHasher, userValidators, passwordValidators, keyNormalizer, errors, services, logger) { /*nothing in here*/ }
+
+	//new methods here
+	//Ex:
+	public new async Task<User?> FindByNameAsync(string userName)
+        {
+            //codes
+        }
+```
+
+2. Add other Manager classes for other User's subclasses as needed by copying above code and replace User by User's subclass name (UserManager<User's subclass name>...). Add other methods if necessary
+
 ## Configure IdentityUser & User's sub-entities
 > IdentityUser (lib) <- User (this one is used to register/login) <- others (these ones are used to work with data/logic)
 1. For User entity (which inherits from IdentityUser), in startup add service
@@ -355,6 +388,11 @@ services.AddIdentityCore<User-sub-entity>()
                 .AddDefaultTokenProviders();
 
 ```
+
+## Add Base classes
+1. In .Reposotory/Extensions, add QueryableExtensions (copy code)
+2. In .Entities, add BaseEntity (copy code and modify if needed)
+3. In .Contracts, add IBaseRepository (copy code)
 
 ## Add Mapper service & Create Mapper Singleton
 > Mapper is used to map one class to another one (Ex: UserDTO <-> User)
