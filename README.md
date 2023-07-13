@@ -1,7 +1,7 @@
 ## Create ASP .NET CORE with terminal:
 1.  cd to the folder
 2.  open folder -> open cmd/terminal
-3.  dotnet new sln -n <project-name>.sln
+3.  dotnet new sln -n "<Project Name>.sln"
 4.  dotnet new webapi -o <project-name>.Api
 5.  dotnet add . -> / -> tab -> / -> tab until <project-name>.Api.csproj
 6.  git init
