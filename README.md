@@ -3,17 +3,16 @@
 2.  open folder -> open cmd/terminal
 3.  dotnet new sln -n "Project Name"
 4.  dotnet new webapi -o ProjectName.Api
-5.  dotnet add . -> / -> tab -> / -> tab until <project-name>.Api.csproj
-6.  git init
-7.  dotnet new gitignore
-8.  GitHub -> new repo -> copy url
-9.  git remote add origin https://github.com/user/project-name.git
-10. echo <#project-name> >> README.md
-11. git add .
-12. git commit -m "initilize"
-13. git branch -M master
-14. git push -u origin master
-15. start <name>.sln
+5.  git init
+6.  dotnet new gitignore
+7.  GitHub -> new repo -> copy url
+8.  git remote add origin https://github.com/user/project-name.git
+9. echo <#project-name> >> README.md
+10. git add .
+11. git commit -m "initilize"
+12. git branch -M master
+13. git push -u origin master
+14. start <name>.sln
 
 
 ```
